@@ -19,7 +19,7 @@ from typing import Tuple, Optional
 
 try:
     # Typical import name for the APA102/Pi library
-    from apa102 import APA102  # type: ignore
+    from apa102_pi.driver.apa102 import APA102  # type: ignore
 except ImportError as e:
     raise ImportError(
         "The 'apa102' module is required. Try: pip install apa102-pi\n"

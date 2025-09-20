@@ -40,7 +40,7 @@ class APA102Controller:
         num_leds: int = 14,
         color: Color = (255, 255, 255),
         brightness: float = 0.2,
-        order: str = "rgb",
+        order: str = "brg",
         max_fps: int = 120,
         spi_bus: Optional[int] = None,
         spi_device: Optional[int] = None,
@@ -152,6 +152,10 @@ class APA102Controller:
     def start_solid(self) -> None:
         """Start 'solid' mode as a managed mode (keeps thread, allows dynamic changes)."""
         self._start_mode("solid")
+        
+    def start_group_pulse(self) -> None:
+        """Groups of 3 LEDs pulse together"""
+        self._start_mode("group_pulse")
 
     def stop(self) -> None:
         """Stop any running animation thread (if any)."""
@@ -266,7 +270,20 @@ class APA102Controller:
                         self.strip.set_pixel(i, 0, 0, 0, 0)
 
                 self.strip.show()
-
+            elif mode == "group_pulse":
+                elapsed = now - t0
+                osc = 0.5 * (1.0 + math.cos(2 * math.pi * (elapsed / pulse_period)))
+                level = pulse_floor + (1.0 - pulse_floor) * osc
+                br_full = int(max(0, min(31, round(level * base_brightness * 31))))
+                # pulse in groups of 3 LEDs
+                r, g, b = color
+                for i in range(self.num_leds):
+                    br = br_full
+                    if br > 0:
+                        self.strip.set_pixel(i, r, g, b, br)
+                    else:
+                        self.strip.set_pixel(i, 0, 0, 0, 0)
+                self.strip.show()
             else:
                 # Idle -> ensure off
                 self.strip.clear_strip()
@@ -315,8 +332,12 @@ if __name__ == "__main__":
         ctrl.start_pulse()
         time.sleep(6)
 
+        print("Pulse group for 6s...")
+        ctrl.start_group_pulse()
+        time.sleep(6)
+
         print("Chase for 6s...")
-        ctrl.set_chase_params(speed_leds_per_s=20.0, width_leds=2.5, tail_leds=6.0)
+        ctrl.set_chase_params(speed_leds_per_s=10.0, width_leds=2.5, tail_leds=6.0)
         ctrl.start_chase()
         time.sleep(6)
 

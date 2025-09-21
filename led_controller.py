@@ -26,6 +26,7 @@ except ImportError as e:
         "Original error: " + str(e)
     )
 
+GAMMA = 2.2 # perceptual correction for smoother fades
 
 Color = Tuple[int, int, int]  # (R, G, B), 0-255 each
 
@@ -39,7 +40,7 @@ class APA102Controller:
         self,
         num_leds: int = 14,
         color: Color = (255, 255, 255),
-        brightness: float = 0.2,
+        brightness: float = 1.0,
         order: str = "brg",
         max_fps: int = 120,
         spi_bus: Optional[int] = None,
@@ -191,6 +192,19 @@ class APA102Controller:
         self._thread = threading.Thread(target=self._animate_loop, name=f"APA102-{mode}", daemon=True)
         self._thread.start()
 
+    def _apply_level(self, color, level):
+        # level is 0..1; apply gamma and scale RGB channels
+        # keep GB fixed at 31 to avoid 5-bit stepping
+        level = max(0.0, min(1.0, level))
+        level_gamma = level ** GAMMA
+        r, g, b = color
+        return(
+            int(round(r * level_gamma)),
+            int(round(g * level_gamma)),
+            int(round(b * level_gamma)),
+            31 # fixed GB (global brightness)
+        )
+
     def _animate_loop(self) -> None:
         last_t = time.perf_counter()
         t0 = last_t
@@ -234,8 +248,7 @@ class APA102Controller:
                 # cos oscillates 1..-1; we convert to 0..1
                 osc = 0.5 * (1.0 + math.cos(2 * math.pi * (elapsed / pulse_period)))
                 level = pulse_floor + (1.0 - pulse_floor) * osc
-                br = int(max(0, min(31, round(level * base_brightness * 31))))
-                r, g, b = color
+                r, g, b, br = self._apply_level(color, level * base_brightness) 
                 for i in range(self.num_leds):
                     self.strip.set_pixel(i, r, g, b, br)
                 self.strip.show()
@@ -274,12 +287,10 @@ class APA102Controller:
                 elapsed = now - t0
                 osc = 0.5 * (1.0 + math.cos(2 * math.pi * (elapsed / pulse_period)))
                 level = pulse_floor + (1.0 - pulse_floor) * osc
-                br_full = int(max(0, min(31, round(level * base_brightness * 31))))
                 # pulse in groups of 3 LEDs
-                r, g, b = color
+                r, g, b, br = self._apply_level(color, level * base_brightness) 
                 for i in range(self.num_leds):
-                    br = br_full
-                    if br > 0:
+                    if (i % 3) == 0:
                         self.strip.set_pixel(i, r, g, b, br)
                     else:
                         self.strip.set_pixel(i, 0, 0, 0, 0)
@@ -313,11 +324,11 @@ if __name__ == "__main__":
 
     Edit the parameters below for your strip.
     """
-    NUM_LEDS = 60
-    DEFAULT_COLOR = (0, 255, 180)  # teal-ish
-    BRIGHTNESS = 0.20
+    NUM_LEDS = 43
+    DEFAULT_COLOR = (255, 255, 255)  # teal-ish
+    BRIGHTNESS = 1.0
 
-    ctrl = APA102Controller(NUM_LEDS, color=DEFAULT_COLOR, brightness=BRIGHTNESS, order="rgb", max_fps=120)
+    ctrl = APA102Controller(NUM_LEDS, color=DEFAULT_COLOR, brightness=BRIGHTNESS, order="rgb", max_fps=120, spi_bus=0, spi_device=0) 
 
     try:
         print("All off for 1s...")
@@ -337,7 +348,7 @@ if __name__ == "__main__":
         time.sleep(6)
 
         print("Chase for 6s...")
-        ctrl.set_chase_params(speed_leds_per_s=10.0, width_leds=2.5, tail_leds=6.0)
+        ctrl.set_chase_params(speed_leds_per_s=10.0, width_leds=2, tail_leds=3)
         ctrl.start_chase()
         time.sleep(6)
 

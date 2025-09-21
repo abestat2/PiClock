@@ -58,15 +58,15 @@ class ClockStepperController:
         *,
         serial_port="/dev/serial0",
         uart_addr=0,                 # TMC2209 slave address if your lib uses it
-        step_pin=18,                 # BCM numbering
-        dir_pin=23,
-        enable_pin=24,
-        minute_home_pin=5,           # minute-hand switch input (BCM)
-        hour_home_pin=6,             # hour-hand switch input (BCM)
+        step_pin=5,                 # BCM numbering
+        dir_pin=6,
+        enable_pin=4,
+        minute_home_pin=26,          # minute-hand switch input (BCM)
+        hour_home_pin=24,            # hour-hand switch input (BCM)
         steps_per_rev=200,           # full steps per motor rev
         minute_per_motor_rev=10/3,   # minute hand revs per motor rev (your spec)
         hour_per_minute_rev=1/18,    # hour hand revs per minute-hand rev (your spec)
-        microsteps=16,               # set microstepping in driver if you like
+        microsteps=8,                # set microstepping in driver if you like
         run_speed_sps=800,           # default run speed: steps per second
         home_speed_sps=200,          # slow homing speed: steps per second
         debounce_ms=8,               # switch debounce
@@ -319,15 +319,15 @@ if __name__ == "__main__":
     clock = ClockStepperController(
         serial_port="/dev/serial0",
         uart_addr=0,              # adjust if your board uses an address
-        step_pin=18,
-        dir_pin=23,
-        enable_pin=24,
-        minute_home_pin=5,
-        hour_home_pin=6,
+        step_pin=5,
+        dir_pin=6,
+        enable_pin=4,
+        minute_home_pin=26,
+        hour_home_pin=24,
         steps_per_rev=200,        # your motor
         minute_per_motor_rev=10/3,
         hour_per_minute_rev=1/18,
-        microsteps=16,            # optional, if configured in your driver
+        microsteps=8,             # optional, if configured in your driver
         run_speed_sps=800,
         home_speed_sps=200,
         debounce_ms=8,
@@ -336,8 +336,8 @@ if __name__ == "__main__":
     )
 
     # 1) Home both hands (stop when both switches are active at once)
-    ok = clock.home()
-    print("Homed:", ok)
+    #ok = clock.home()
+    #print("Homed:", ok)
 
     # 2) Move to 07:30:00 AM → 7.5 hours → 450.0 minutes
     moved = clock.goto_minutes(450.0)

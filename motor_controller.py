@@ -361,8 +361,6 @@ class ClockStepperController:
     # ----------------------------------------------------------------------------
 
     def _enable_motor(self, enable=True):
-        print(f"enable motor: {bool(enable)}")
-        print(f"{GPIO.LOW if (enable and self.enable_low_is_on) else GPIO.HIGH if (enable and not self.enable_low_is_on) else (GPIO.HIGH if self.enable_low_is_on else GPIO.LOW)}")
         GPIO.output(
             self.ENABLE_PIN,
             GPIO.LOW if (enable and self.enable_low_is_on) else

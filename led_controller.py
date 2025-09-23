@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
     Edit the parameters below for your strip.
     """
-    NUM_LEDS = 43
+    NUM_LEDS = 44
     DEFAULT_COLOR = (255, 255, 255)  # teal-ish
     BRIGHTNESS = 1.0
 
